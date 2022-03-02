@@ -145,7 +145,7 @@ git checkout branchname 切换到指定分支
 
 git checkout -b new_branch 新建分支并切换到新建分支
 
-git checkout -b new_branch origin_branch 在origin_branch远程分支上创建本地new_branch分支
+git checkout -b new_branch origin_branch 在origin_branch远程分支上创建本地new_branch分支(origin/需要加上)
 
 git branch -d branchname 删除指定分支（会在删除前检查merge的状态，如果该分支有提交未进行合并，则删除会失败）
 
@@ -156,6 +156,8 @@ git branch 查看所有分支，并且*号标记当前所在分支
 git merge branchname 合并分支
 
 git branch -m|-M oldbranch newbranch 重命名分支，如果newbranch已经存在，则需要用-M强制重命名，否则使用-M进行重命名。
+
+git branch -vv 查看本地分支与远程分支的映射关系
 
 **要在主干上合并分支，而不能在分支上合并主干**（原因）
 
@@ -243,50 +245,62 @@ https://blog.csdn.net/stone_yw/article/details/80795669
 
 *git pull和git fetch拉取远程分支的区别*
 
-1. git stash 效果：stash@{0}: WIP on master: b2f489c second
+git stash 效果：stash@{0}: WIP on master: b2f489c second
 
-2. git stash save 效果：stash@{0}: On master: test1   {0}表示当前数据在堆栈的最外层。
+git stash save 效果：stash@{0}: On master: test1   {0}表示当前数据在堆栈的最外层。
 
-3. git stash pop 将堆栈中的最外层数据弹出，并应用与当前分支的工作目录上（只弹出最外面的一层）可能会出现冲突，**可以 通过创建新的分支来解决**。
+git stash pop 将堆栈中的最外层数据弹出，并应用与当前分支的工作目录上（只弹出最外面的一层）可能会出现冲突，**可以 通过创建新的分支来解决**。
 
-4. git stash apply 讲堆栈中的内容应用到当前目录，与git stash pop 不同，该命令不会删除堆栈中的内容，**也就说该命令能够将堆栈的内容多次应用到工作目录中，适应于多个分支的情况。**
+git stash apply 讲堆栈中的内容应用到当前目录，与git stash pop 不同，该命令不会删除堆栈中的内容，**也就说该命令能够将堆栈的内容多次应用到工作目录中，适应于多个分支的情况。**
 
-   可以使用git stash apply + stash名字（如stash@{1}）指定恢复哪个stash到当前的工作目录
+可以使用git stash apply + stash名字（如stash@{1}）指定恢复哪个stash到当前的工作目录
 
-5. git stash drop + 名称  从堆栈中移除某个指定的stash
+git stash drop + 名称  从堆栈中移除某个指定的stash
 
-6. git stash clear 清除堆栈中的所有内容
+git stash clear 清除堆栈中的所有内容
 
-7. git stash show 查看堆栈中最新保存的stash和当前目录的差异。
+git stash show 查看堆栈中最新保存的stash和当前目录的差异。
 
-   git stash show stash@{1}查看指定的stash和当前目录的差异。
+git stash show stash@{1}查看指定的stash和当前目录的差异。
 
-    git stash show -p 查看详细的不同
+ git stash show -p 查看详细的不同
 
-   git stash show stash@{1} -p查看指定的stash的差异内容
+git stash show stash@{1} -p查看指定的stash的差异内容
 
-8. git stash list 查看当前stash中的内容。
+git stash list 查看当前stash中的内容。
 
-9. git stash branch  从最新的stash创建一个新的分支，然后删除最近的stash（和stash pop）一样，如果需要某个stash，可以指明stash id 如 git stash branch <branch_name> stash@{1}
+git stash branch  从最新的stash创建一个新的分支，然后删除最近的stash（和stash pop）一样，如果需要某个stash，可以指明stash id 如 git stash branch <branch_name> stash@{1}
 
-   **应用场景：**当储藏了部分工作，暂时不去理会，继续在当前分支进行开发，后续想将stash中的内容恢复到当前工作目录时，如果是针对同一个文件的修改（即便不是同行数据），那么可能会发生冲突，恢复失败，这里通过创建新的分支来解决。可以用于解决stash中的内容和当前目录的内容发生冲突的情景。
-   发生冲突时，需手动解决冲突。
+**应用场景：**当储藏了部分工作，暂时不去理会，继续在当前分支进行开发，后续想将stash中的内容恢复到当前工作目录时，如果是针对同一个文件的修改（即便不是同行数据），那么可能会发生冲突，恢复失败，这里通过创建新的分支来解决。可以用于解决stash中的内容和当前目录的内容发生冲突的情景。
+发生冲突时，需手动解决冲突。
 
-   
 
-   ##### 撤销pull命令
 
-   首先运用git reflog  查看历史变更记录
+##### 撤销pull命令
 
-   在运用git reset --hard HEAD@{n}回退到之前提交的版本。
+首先运用git reflog  查看历史变更记录
 
-   ##### git rebase
+在运用git reset --hard HEAD@{n}回退到之前提交的版本。
 
-   https://www.jianshu.com/p/4a8f4af4e803
+##### git rebase
 
-   
+https://www.jianshu.com/p/4a8f4af4e803
 
-   
+##### 创建新分支的方法
+
+https://blog.csdn.net/tterminator/article/details/78108550
+
+- git branch -vv 查看本地与远程分支的映射关系
+
+git branch -u origin/r_branchname 将当前分支与远程分支建立映射关系
+
+或者使用命令git branch --set-upstream-to origin/ r_branchname 
+
+本地分支和远程分支建立联系后即可从远端拉取分支以及从本地推送内容。
+
+- 撤销本地分支与远程分支之间的联系 git branch --unset-upstream
+
+
 
 
 

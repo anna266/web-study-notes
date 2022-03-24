@@ -2,6 +2,7 @@
 
 - vue 中容器与实例必须是一一对应的关系
 - vue的模板中只能用**vue实例vm中的属性或方法**，无法用实例外部的内容。
+- 在vscode中可借助git history或者git graph插件帮助进行代码管理
 
 ### 模板语法（template）：
 

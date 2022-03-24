@@ -145,7 +145,7 @@ git checkout branchname 切换到指定分支
 
 git checkout -b new_branch 新建分支并切换到新建分支
 
-git checkout -b new_branch origin_branch 在origin_branch远程分支上创建本地new_branch分支(origin/需要加上)
+git checkout -b new_branch origin/branch 在origin_branch远程分支上创建本地new_branch分支(origin/需要加上)
 
 git branch -d branchname 删除指定分支（会在删除前检查merge的状态，如果该分支有提交未进行合并，则删除会失败）
 

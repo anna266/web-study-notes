@@ -1,8 +1,9 @@
+[笔记参考视频](https://www.bilibili.com/video/BV1Zy4y1K7SH?p=27)
+
 ### vue学习笔记
 
 - vue 中容器与实例必须是一一对应的关系
 - vue的模板中只能用**vue实例vm中的属性或方法**，无法用实例外部的内容。
-- 在vscode中可借助git history或者git graph插件帮助进行代码管理
 
 ### 模板语法（template）：
 
@@ -78,6 +79,8 @@ vue配置对象中的methods中各个函数的写法：
 如果事件名称后面有参数，则在 eventName(a,b){}中传入的将是对应的参数，但无法对event进行处理
 3.<button v-on:click="eventName（a,b,$event）">点我提示信息</button> 
 引入$event，在eventName(a,b,c){}中对应位置，即可得到事件event本身。
+
+//绑定事件的时候 @xxx="yyy",其中xxx为事件类型，yyy为所需要执行的函数，当yyy内容较少时，可直接在里面写表达式语句，但不能写if for类非js表达式语句。
 ```
 
 **事件修饰符**
@@ -172,7 +175,169 @@ computed:{
 }
 ```
 
-
-
 - **当vue中data的数据发生改变时，则会重新更新模板。**
 
+计算属性简写：
+
+```
+//若确定该计算属性只需读取不需改写，则可删掉setter
+computed:{
+    fullName:{
+      get(){
+          return xx ;
+      },
+    }
+}
+//在只有getter的情况下又可简写为
+fullName: function(){
+	return xx;
+}
+//函数写表达形式又可简写为
+fullName(){
+	return xx;
+}
+注：虽然简写后表达形式上fullName像函数，但它其实还是计算属性，使用时不要在后面加括号。
+```
+
+**监视属性**（监视是针对属性进行监视的，包括基本属性和计算属性）
+
+1. 在创建vue实例时的配置对象中添加监视
+
+```
+watch：{
+	isHot:{
+		immediate:true,  //初始化时让handler先调用一遍
+		//每当isHot发生变化时，handler函数就会被调用
+        handler(newValue,oldVAlue){
+            console.log('xxx')
+        }
+	}
+}
+```
+
+2. 在实例对象vm创建完成后，添加监视的方法
+
+```
+vm.$watch('isHot',{
+    immediate:true,  //初始化时让handler先调用一遍
+    //每当isHot发生变化时，handler函数就会被调用
+    handler(newValue,oldVAlue){
+    console.log('xxx')
+    }
+})
+小细节：在使用$watch时，属性名称使用的是'isHot'，而在上面那种方式中采用的是isHot，这是因为，上面那种方式中使用了一种对象的简写，key:value,中key可简写为不加引号的，实际都是应该有引号的，第二种方式中有了引号只有就不会被当做变量去读取里面的值了。
+```
+
+**深度监视**（watch默认只检测一层）
+
+```
+//检测多级结构中某个属性的变化
+data:{
+    number:{
+        a:1,
+        b:2
+    },
+    watch:{
+        'number.a':{     //要实现深度监视，需要将简写的key还原成原始带引号的写法，即加上'number.a'
+            handler(){
+                console.log('xx')
+            }
+        }
+    }
+}
+//检测多级结构中所有属性的变化
+data:{
+    number:{
+        a:1,
+        b:2
+    },
+    watch:{
+        number:{
+        	deep:true,  //如果不加这个属性，a和b的任何一个值改变都不会触发handler
+            handler(){
+                console.log('xx')
+            }
+        }
+    }
+}
+```
+
+**监视属性简写**
+
+```
+watch：{
+//当所监视的属性只需要handler配置项时，可直接简写为如下形式
+     isHot(newValue,oldVAlue){
+         console.log('xxx')
+     }
+}
+vm.$watch('isHot',function(newValue,oldVAlue){})//同理于创建完实例后的检测方式
+```
+
+**计算属性与监听器的区别：**
+
+- 对于一些需要异步返回数据的，计算属性由于需要return将不再适用
+- 计算属性能实现的功能，监视属性一定能实现
+
+**绑定class样式**
+
+字符串写法，适用于：样式的类名不确定，需要动态指定。
+
+```
+<div class="basic" :class="mood" @clock="changeMood">{{name}}</div>
+```
+
+数组写法，适用于：要绑定的样式个数不确定，名字也不确定
+
+```
+<div class="basic" :class="classArr" @clock="changeMood">{{name}}</div>
+//对应的data中
+data：{
+     classArr:['x1','x2','x3'] //这样写，这几种样式最终都会被vue添加到上面的div盒子上
+}
+```
+
+对象写法，适用于：要绑定的样式个数确定，名字确定，但用不用不确定
+
+```
+<div class="basic" :class="classObj" @clock="changeMood">{{name}}</div>
+//对应的data中
+data：{
+     classObj:{
+       x1:false, //false表示不适用该属性，true表示使用该属性
+       x2:false
+     }
+}
+```
+
+**绑定style样式**
+
+```
+//这里需要改成{}的形式
+<div class="basic" :style={fontSize: fsize + 'px'}>{{name}}</div>
+//对应的data中
+data：{
+      fsize:40
+}
+//另一种写法 （加上冒号之后就会将后面引号中的js按照表达式去执行）
+<div class="basic" :style={styleObj}>{{name}}</div>
+//对应的data中
+data：{
+      styleObj:{
+       	fontSize:'40px'
+      }
+}
+注：需要改的样式较多时，第二种方式更加合适
+//也可不适用{}形式，而是使用数组(不常用)
+<div class="basic" :style=[styleObj1,styleObj2]>{{name}}</div>
+data：{
+      styleObj1:{
+       	fontSize:'40px'
+      },
+      styleObj2:{
+       	backgroundColor:'yellow'
+      }
+}
+```
+
+<img src="E:\vue学习\picture\微信图片_20220324220219.png" style="zoom:60%;" />

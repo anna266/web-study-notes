@@ -341,3 +341,352 @@ data：{
 ```
 
 <img src="E:\vue学习\picture\微信图片_20220324220219.png" style="zoom:60%;" />
+
+**条件渲染**
+
+v-show: <h2 v-show="false"> 哈哈哈</h2>  这个效果相当于display：none，节点还是存在的。v-show="false"引号中知道是js表达式即可。
+
+v-if:<h2 v-if="false"> 哈哈哈</h2>  这个效果会直接将整个节点删掉。v-if、v-else-if、v-else
+
+注意：若变化的比较频繁，则建议使用v-show,否则建议使用v-if。
+
+**template标签：**
+
+该标签中可以用来写指令，但不会产生新的盒子来破坏结构。
+
+注意：template不能和v-show一起使用，但可以和v-if一起使用。
+
+**列表渲染**
+
+v-for 在所需要的循环标签中加入v-for
+
+```
+<li v-for="p in persons" :key="p.id">{{p.name}}-{{p.age}}</li>
+<li v-for="(p,index) in persons" :key="p.id">{{p.name}}-{{p.age}}</li> //前面是由两个参量的，一个是遍历的某一项，一个是对应于数组的索引值。
+```
+
+**其不仅可以对数组进行遍历，也可以对对象、字符串进行遍历**，同样都是第一个是内容，第二个是索引。
+
+可也遍历指定次数，不过用的不多
+
+```
+<li v-for="(number,index) in 3">{{number}}-{{index}}</li>
+%%输出结果为：
+    1-0
+    2-1
+    3-2
+```
+
+**列表过滤**
+
+注意：**一个字符串中indexOf('')返回的结果都是0索引值，而不是-1**
+
+**vue检测对象数据变化的原理**（看视频）
+
+**向vue中添加响应式数据的方法**:
+
+```
+Vue.set(target,key,val)
+vm.$set(target,key,val)
+注意：
+1. 在数组中这个key表示的是索引值。
+2. 虽然vm的数组中没有自己的getter和setter，但数组中如果是有对象的，那么对象中的属性其实是有响应式的。
+3. 若要改变的数组不会改变原来的数组，如filter等，则可以将过滤后的值重新赋值给该数组。
+```
+
+![](E:\vue学习\picture\微信图片_20220326222545.png)
+
+**收集表单数据：**
+
+多选框，select等表单数据中，v-model和value的写法
+
+![](E:\vue学习\picture\微信图片_20220326234259.png)
+
+- 像checkedbox这种类型的，也需要配置value值，否则将会读取checked中的布尔值作为value值
+- 设置好了value后，还需要将v-model对应的data数据写为数组的形式，如果仍然写为字符串，则还是会读取checked中的布尔值。
+
+- v-model也有修饰符，如v-model.number="xxx" 限制输入的值只能是数字； v-model.lazy="xxx"懒收集，只有在当前输入框失去焦点时才进行收集，可用于多输入框中，不用实时监控，以此来提高效率；v-model.trim使得收集数据时自动去掉用户输入的最前面和最后面的空格，中间的空格不会去掉。
+
+**过滤器：**
+
+![](E:\vue学习\picture\微信图片_20220327120148.png)
+
+ 过滤器已在vue3中被移除，具体可参考视频。
+
+![](E:\vue学习\picture\微信图片_20220327165853.png)
+
+**内置指令**
+
+- **v-text**：向其所在的节点中渲染文本内容；与插值语法的区别在于v-text会替换文本中的内容，{{x}}不会。
+
+```
+<h3 v-text="name"></h3>
+<h3>{{name}}</h3>   //该方法用的更多，更灵活
+```
+
+- **v-html**：可以渲染带标签的内容，v-text只能解析字符串，不能解析标签，具体区别看下图
+
+![](E:\vue学习\picture\微信图片_20220327175828.png)
+
+- **v-clock：**没有值，本质是一个特殊属性，当**vue实例创建完成并接管容器后**就会删掉该属性；与CSS的**属性选择器**配合可以解决网速慢时页面展示出{{xx}}的问题。使用方法：
+
+```
+[v-clock]{
+	display:none;
+}
+```
+
+- **v-once**：没有值，其所在节点在**初次**渲染后就视为**静态内容**，之后数据的改变不会引起v-once所在结构的更新。
+
+- **v-pre：**为标签加上该属性可以使vue在解析模板时跳过该结点的解析，一般用于没有插值语法和vue指令的标签中，可提高代码效率。
+
+**自定义指令**
+
+- 函数式
+
+```
+<h2>放大10倍后的n值是：<span v-big="n"></span></h2>
+在vue的配置对象中加入
+directives:{
+    big(element,binding){
+    	element.innerYext = binding.value * 10
+    }
+}
+//这里面的element指向v-big绑定的标签span（真实的DOM）,binding里面的value值表示v-big绑定的数据,binding中还有很多其它数据，需要时可在调试器中进行查阅。
+//big何时会被调用？1.指令与元素成功绑定时（一上来），2.指令所在的模板被重新解析时。
+```
+
+- 对象式
+
+```
+<input v-fbind:value = 'n'/>
+directives:{
+    fbind:{
+            bind(element,binding){     //指令与元素成功绑定时调用
+            element.value = binding.value
+        },
+            inserted(element,binding){    //指令所在元素插入页面时调用
+            element.focus()
+        },
+            update(element,binding){    //指令所在模板被重新解析时调用
+            element.value = binding.value
+        }
+    }
+}
+// 函数式写法，其实就是只调用了对象式写法中的bind和update。
+```
+
+- 容易踩的坑
+  1. 指令的命名：当指令是多个单词连写时，要用-隔开，而不是使用小驼峰。v-big-number，在写函数式指令时，要将其key写为原始形式'big-number'(){ }
+  2. 指令directives对象中的this都是指向的window，而不是vm
+
+- 用于全局中
+
+  Vue.directive('fbind',{})或Vue.directive('fbind',function(){})//后面的括号就是前面fbind对应的内容。
+
+**生命周期**
+
+- mounted(){} //vue完成模板的解析并把初始的真实DOM元素放入页面后（挂载完毕），调用mounted（只在第一次页面挂载时调用）
+
+顺序：
+
+beforeCreate、created、beforeMouth、mounted(初始化，重要)、beforeUpdate、updated、beforeDestroy（收尾工作，重要）、destroyed
+
+**组件**
+
+- 组件中的data必须写为函数return的形式，因为组件可以应用于多个位置，每次return都可以创造出一个新的对象，避免了造成数据污染。但通过new出来的组件对象是可以写成对象的。
+
+#### 非单文件写法
+
+1. 创建组件：const school = Vue.extend({配置对象的内容}  里面的模板用template对象写
+
+2. 注册组件：
+
+```
+new Vue({
+    el:'#root',
+    components:{     //组件注册过程（局部注册）
+        xuexiao:school,
+    }
+})
+```
+
+3. 编写组件标签：
+
+```
+<div id = "root">
+     <xuexiao></xuexiao>
+</div>
+```
+
+全局注册组件方式： Vue.component('组件标签名','定义的组件')
+
+**组件的注意点**
+
+1. 组件的命名：
+
+   单个单词可以用小写也可以首字母大写
+
+   多个单词组成需要用横杆-连接，或者每个单词首字母都大写，但这种方式只能应用在脚手架里
+
+2. 可以在组件配置项中用name来定义组件在开发者工具中的名字
+
+3. 在脚手架中可以使用组件的自闭合标签
+
+4. 一个简写的方式：const school = Vue.extend(option) 可简写为 const school = option,直接传入对象，在注册组件时，vue会自动利用Vue.extend()去调用。
+
+**组件嵌套**
+
+子组件需要在父组件的components中进行注册，并在父组件中进行调用，从而形成嵌套关系。
+
+在进行组件开发时，一般选择一个总的APP组件作为最外层组件来管理各个层级的组件。
+
+**VueComponent**
+
+组件中各配置项中的this指向VueComponent的实例对象，简称为vc, 而在new Vue(option)中，option中的this都指向vm。
+
+在写组件标签时，就是在new一个VueComponent。
+
+**一个重要的内置关系：**
+
+```
+VueComponent.prototype.__proto__ === Vue.prototype
+```
+
+这样做的目的是**让组件实例对象vc也可以访问到vue原型上的属性和方法**。
+
+#### **单文件组件**
+
+单文件组件中**能写的标签**
+
+```
+<template>组件的结构</template>
+<script>组件交互相关的改吗（数据、方法等）</script>
+<style>组件的样式</style>
+```
+
+.vue文件就是组件，里面不能创建vue的实例。
+
+在脚手架中，一般main.js文件中一般是用来构造vue实例，APP.vue用于构造总的单文件组件，index.html中存放main.js中的模板标签。在index.html中用script标签引入main.js文件（要引用在标签之后）。
+
+### 使用vue脚手架
+
+安装步骤：
+
+- 进第一次需要，执行该命令后，后续可直接使用vue命令进行脚手架的安装  npm i -g @vue/cli
+- 切到要创建项目的目录，然后使用命令创建项目  vue create xxx
+- 进入项目目录cd xxx       开始运行项目npm run serve
+
+两个地址： localhost是自己用的，NetWork是给同局域网中其他人用的。
+
+src中的assets文件夹中一般存放项目中的静态文件（图片、视频啥的），components中写项目的组件。
+
+**render配置项**
+
+在引入库时（import Vue from 'vue'），这里面的vue对应的具体文件路径可从vue文件的package.json的module中获得。
+
+vue.js和vue.runtime.xxx.js的区别：
+
+（1） vue.js是完整版的Vue，包含核心功能+模板解析器
+
+ （2） vue.runtime.xxx.js是运行版本的Vue,只包含核心功能没有模板解析器
+
+所以在引入的是 vue.runtime.xxx.js时，不能使用template配置项，需要使用render函数接收到的creatElement函数指定具体用法。
+
+**修改默认配置**
+
+webpack配置文件webpack.config.json
+
+vue inspect > output.json 可以将脚手架中的隐藏配置文件以output.json文件的形式输出。
+
+vue.config.js文件中可以写一些脚手架的配置修改项（进行个性化定制），如入口等，最终vue会以该文件为主与webpack进行合并。具体修改项可以看vue脚手架的官网。在其中加入lintOnSave:false可以关闭语法检查。
+
+![](E:\vue学习\picture\微信图片_20220407203645.png)
+
+
+
+**ref的使用**
+
+![](E:\vue学习\picture\微信图片_20220406215504.png)
+
+**props配置**
+
+传入数据的几种接收方式：
+
+从组建中传入：<Student name='张三‘ sex="男"  :age = "18"/>  //**注意这里age前面加上冒号，表示引号中的内容要进行js表达式运算，不加冒号则会将引号中整个内容以字符串的形式进行传递。**
+
+1. 简单声明接收： props:['name','age','sex']
+
+2. 接收的同时对数据进行类型限制：
+
+   ```
+   props:{
+       name:String,
+       age:Number,
+       sex:String
+   }
+   ```
+
+3. 接收的同时对数据进行类型限制+默认值的指定+必要性的限制
+
+   ```
+   props:{
+       name:{
+           type: String,
+           required:true
+       },
+       age:{
+            type: Number,
+            default:99    
+       },
+       sex:{
+       	type: String,  //不写required表示该属性不是必须的
+       }
+   }
+   ```
+
+   注意：**props传入的属性在被传入组件中不要进行修改**，如果必须要进行修改，可以通过重新在data或计算属性中定义一个新的属性来进行更改。props中的属性名不要与data的重合，若有重合props的优先级更高。
+
+**mixin混入**
+
+功能：可以把多个组件共用的配置提取成一个混入对象
+
+使用方式：
+
+```
+//第一步定义混合
+export const mixin = {  //用分别暴露比较合适
+    data(){...}
+    method:{...}
+    ...
+}
+//第二步使用混入
+（1）全局混入：Vue.mixin(xxx) 这一步骤写在main.js中，这样全局所有的vm和vc上都将混入xxx中的内容
+（2）局部混入：mixins:['xxx'],这一项与data、methods等同级。
+```
+
+注意：混入时，里面的data与组件中的data将进行一个整合，若有名字冲突，则会选择组件中的内容。mounted（）这种生命周期钩子若两者里面都有，则都会执行一遍，且先执行混入中的钩子，在执行组件中的。
+
+**Vue插件编写**
+
+![](E:\vue学习\picture\微信图片_20220408204148.png)
+
+例如：
+
+![vue的](E:\vue学习\picture\微信图片_20220408204343.png)
+
+使用方法：import plugins from './plugins'    Vue.use(plugins,a,b,c)后面还可以向里面传递参数，第一个参数是Vue的构造函数。
+
+可以看出，所写的插件中一般是全局的一些东西，可直接应用于所有的vm和vc上。
+
+**Scoped样式**
+
+- 作用：让样式在局部组件内生效，方式冲突，若冲突后，会按照引入的顺序进行覆盖。
+
+- 写法：<style scoped>
+
+- <style lang="CSS"> <style>表示标签中的内容要按照CSS来解析，如果是less则按照less解析。less的话需要下载相应的插件。
+
+- npm view **webpack** versions 查看当前webpack的版本。
+
+- 一般APP组件中不写scoped，里面一般写全局的一些样式。

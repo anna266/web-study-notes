@@ -498,8 +498,7 @@ beforeCreate、created、beforeMouth、mounted(初始化，重要)、beforeUpdat
 
 #### 非单文件写法
 
-1. 创建组件：const school = Vue.extend({配置对象的内容}  里面的模板用template对象写
-
+1. 创建组件：const school = Vue.extend({配置对象的内容}  里面的**模板**用template对象写
 2. 注册组件：
 
 ```
@@ -534,6 +533,10 @@ new Vue({
 3. 在脚手架中可以使用组件的自闭合标签
 
 4. 一个简写的方式：const school = Vue.extend(option) 可简写为 const school = option,直接传入对象，在注册组件时，vue会自动利用Vue.extend()去调用。
+
+5. const school = Vue.extend(option) 注意这里生成的school是VueComponent构造函数，当将该构造函数写成标签的形式时，vue源码就会自动创建其vc实例
+
+6. 每个组件在执行const school = Vue.extend(option) 之后，都会产生一个新的VueComponent构造函数。
 
 **组件嵌套**
 
@@ -646,6 +649,15 @@ vue.config.js文件中可以写一些脚手架的配置修改项（进行个性�
    ```
 
    注意：**props传入的属性在被传入组件中不要进行修改**，如果必须要进行修改，可以通过重新在data或计算属性中定义一个新的属性来进行更改。props中的属性名不要与data的重合，若有重合props的优先级更高。
+   
+   props也可接收函数类型的数据，**实现子组件向父组件传递信息**
+   
+   ```
+   <Student :hellow="hellow"/>  //父组件向子组件中传递hellow方法
+   methods:{
+   	hellow(a){}
+   }
+   ```
 
 **mixin混入**
 
@@ -690,3 +702,166 @@ export const mixin = {  //用分别暴露比较合适
 - npm view **webpack** versions 查看当前webpack的版本。
 
 - 一般APP组件中不写scoped，里面一般写全局的一些样式。
+
+**组件的自定义事件**
+
+一种组件间的通信方式：适用于**子组件向父组件传递信息**
+
+适用场景：A是父组件，B是子组件，B想给A传数据，那么就要在A中给B绑定自定义事件（事件的回调在A中）
+
+绑定自定义事件：
+
+1. 在父组件中使用 <Demo @atguigu = "test"/> 若需要事件只触发一次，可以加上事件修饰符.once
+2. 在父组件中
+
+```
+<Demo ref="demo"/>
+……
+mounted(){
+   this.refs.demo.$on('atguigu',this.test)
+}
+methods:{
+    test(name,...a){ //...a是ES6的缩写表示，把接收到的参数除了name外，全部放在a中，包裹成一个a对象
+    }
+}
+// 若需要事件只触发一次，需要将$on改为$once
+```
+
+3. 触发自定义事件：this.$emit('atguigu',参数)  在子组件中进行自定义事件的触发
+4. 解绑自定义事件：
+
+```
+this.$off('atguigu') //只解绑atguigu事件
+this.$off(['atguigu','demo'])  //解绑多个事件
+this.$off() //解绑该组件上的所有事件
+```
+
+5. 组件上若需要绑定原生DOM事件，需要加上**.native修饰符**，否则将会被认定为自定义事件。
+6. 注意：通过this.$refs.xxx.$on('atguigu',回调)绑定自定义事件时，回调要么配置在methods函数中，要么使用箭头函数，否则this指向会出现问题。**$on表示为当前组件绑定自定义事件。**
+
+**全局事件总线** (能够实现任意组件间的通信)  用的更多一点
+
+事件总线要同时满足 1.所有组件以及vm都能够访问到 2.能够调用$on,$off.$emit(不难发现能够满足该条件的只有Vue的原型，即Vue.proptype)
+
+```
+new Vue({
+    el:'#app',
+    render: h =>h(App),
+    beforeCreate(){     //在创建之前在vue的原型上绑定x，安装全局事件总线
+        Vue.proptype.x = this
+    }
+})
+//一般开发中我们将x命名为$bus，其中$只是为了迎合Vue的设计。
+在不用该事件后，最好需要进行解绑
+beforeDestroy(){
+	this.$bus.$off('hello')
+}
+```
+
+**消息订阅与发布**（能够实现任意组件间的通信）
+
+类似的库有很多，这里用到的是pubsub-js
+
+使用前先安装该库： npm i pubsub-js
+
+```
+首先在发布和订阅之前要引入pubsub-js,即 import pubsub from 'pubsub-js'
+需要接受数据的组件需要订阅消息，可写在mounted中
+mounted(){
+    this.pubId = pubsub.subscribe('hello',(msgName,data)=>{  
+     //每次订阅的消息都会生成一个不同的pubId，解绑时要用到
+     //注意接受到的第一个参数是该订阅消息的名称，这里是hello
+     //这里需要用箭头函数，防止出现问题
+    })
+}
+beforeDestoryed(){
+	pubsub.unsubscribe(this.pubId)  //由于库的设计，在解绑时，不是解绑消息名，而是解绑该消息对应的pubId。
+}
+需要发送消息的组件发布消息
+mounted(){
+	pubsub.publish('hello',data)
+}
+```
+
+**nextTick**
+
+1. 语法：this.$nextTick(function(){this.$refs.inputTitle.fouces()})  //这里的this指向的是vc(只要是vue的东西，都会保证this的指向是vc)
+
+2. 作用：在下一次DOM更新结束后执行其指定的回调
+3. 使用场景：当数据改变之后，要基于更新后的DOM进行某些操作时，要在$nextTick所指定的回调函数中执行
+
+### **插槽**
+
+作用：让父组件可以向子组件指定位置插入HTML结构，也是一种组件间通信的方式，适用于**父组件=>子组件**
+
+1. **默认插槽**
+
+​    父组件 ： <Student> <img src="#"><Student/>
+
+​    Student子组件：<slot>当未传入数据时显示内容</slot>   //**这里使用一个slot标签对父组件中的组件标签中的内容进行接收，如果没有传递过来数据，则直接展示slot标签中的内容**，至于插槽内的样式，在父组件或者子组件写都可以。
+
+2. **具名插槽**
+
+父组件： 
+
+```
+<Student> 
+    <img src="#" slot="center"/>
+    <a slot = "footer" src = "#">
+    <a slot = "footer" src = "#">
+<Student/>
+//若将后面的两个a标签放到一起写，则重新写为
+<Student> 
+    <img src="#" slot="center"/>
+    <template v-slot:footer>  //这里也可以写为slot="footer",若是在template标签中，也可以使用v-slot:footer这种写法
+        <a slot = "footer" src = "#">
+        <a slot = "footer" src = "#">
+    <template>
+<Student/>
+```
+
+Student子组件：
+
+```
+<slot name="center">当未传入数据时显示内容</slot>
+<slot name="footer">当未传入数据时显示内容</slot>
+```
+
+- [x] 默认插槽和具名插槽的使用场景是子组件所需要的**数据都在父组件中**
+
+**作用域插槽**：
+
+理解：数据在组件自身，但根据数据生成的结构需要组件的使用者决定
+
+- [x] 作用域插槽可以解决**所需要的插槽数据存放在子组件中的情况**
+
+父组件：
+
+```
+<Category>
+    <template scope="atguigu">
+      <ui>
+         <li v-for="(g,index) in atguigu.games" :key="index">{{g}}</li>
+      </ui>
+    <template/>
+</Category>
+```
+
+- 注意：这里必须要**使用template标签进行包裹**，scope用于接收子组件slot标签带过去的数据，atguigu是随意取的，其为一个对象，**对象中包含所有件slot标签带过去的数据**（之所以这么写是因为有可能传过去的是多个数据），这里也指示简写形式即写为 **scope="{games}"**，此外新版本中可以将scope写为slot-scope。
+
+子组件
+
+```
+<div>
+	<slot :games = "games"></slot>
+</div>
+data(){
+	games:['数据一','数据二','数据三']
+}
+```
+
+- 注意：这里slot标签中的第一个games表示传过去的名字，第二个games表示data中的games数据
+
+**作用域插槽也可以结合具名插槽一起使用**
+
+### vuex

@@ -1,9 +1,13 @@
-[笔记参考视频](https://www.bilibili.com/video/BV1Zy4y1K7SH?p=27)
+[ 笔记参考视频](https://www.bilibili.com/video/BV1Zy4y1K7SH?p=27)
 
 ### vue学习笔记
 
 - vue 中容器与实例必须是一一对应的关系
-- vue的模板中只能用**vue实例vm中的属性或方法**，无法用实例外部的内容。
+- vue的模板中只能用**vue实例vm中的属性或方法**，无法用实例外部的内容
+- 若是vue中的插件，则需要利用Vue.use(xxx)来使用
+- SPA (single page web application) 单页面应用
+- vue的插件库要使用Vus.use(x)来引入
+- components放置一般组件，pages放置路由组件 
 
 ### 模板语法（template）：
 
@@ -865,3 +869,610 @@ data(){
 **作用域插槽也可以结合具名插槽一起使用**
 
 ### vuex
+
+概念：专门在vue中实现**集中式状态（数据）管理**的一个Vue插件，对vue应用中**多个组件的共享状态**进行集中式的管理（读/写），也是一种组件间的通信方式，且**适用于任意组件间的通信**。
+
+- import '地址' ，直接这么写表示直接运行地址中的代码
+- 所有的import文件都会在页面的最开始执行，无论写在哪里
+- store/index.js文件的写法
+
+```
+inport Vue from 'vue'
+import Vuex from 'vuex'
+Vue.use(Vuex)   //在创建store实例之前必须要先使用Vue.use(Vuex)
+const action = {   //用于响应组件中的动作
+    jia(contex,value){
+       context.commit('JIA',value)
+    }
+}
+const mutation = {   //用于操作数据state
+    JIA(state,value){
+        state.num+=value
+    }
+}
+const state = {   //用于存储数据
+	sum:0	
+}
+
+export default new Vuex.Store({
+   action,    //触发了对象的简写形式
+   mutation,
+   state
+})
+```
+
+main.js中的写法
+
+```
+import store from ''
+new Vue({
+    el:'#app',
+    render: h=>h(APP),
+    store //对象的简写形式
+})
+```
+
+**基本使用方法：**
+
+- action、mutation以及state都在store身上
+
+- mutation中只负责处理数据，业务逻辑和网络请求等需要在action中
+- 在组件中调用action或mutation的方法
+
+```
+this.$store.dispatch('jia',this.n)  //jia表示动作的名称
+this.$store.commit('JIA',this.n) //即没什么业务逻辑，只需要进行数据操作
+```
+
+注：一般action中的名称为小写，mutation中的方法名称为大写
+
+**store中getter配置项**
+
+准备getters用于**将state中的数据进行加工**
+
+```
+getters:{   //与state、actions、mutations同级
+      bigSum(state){
+        return state*10  //要有返回值（类似于computed）
+      }
+}
+```
+
+获取数据bigSum时使用，this.$store.getters.bigSum
+
+**mapState与mapGetters**
+
+- 引入方式 import {mapState, mapGetters} from 'vuex'
+
+- 这种写法可是使得在**模板中调用store中的state数据时较为简洁**。
+
+ES6知识点：
+
+```
+let obj1 = {x:100,y:200}
+let obj = {a:1,...obj1,b:2}
+//其中...obj表示将对象中的key/value展开
+```
+
+对象简写形式注意点：
+
+```
+let a = 100;
+let b = {a:a}  //这种形式可以触发对象的简写形式，即使a属性对应的value会去读取a的值
+let c = {a:'a'}  //这种形式不能触发对象简写形式，因为值是字符串，而不是js表达式
+```
+
+-  借助mapState/mapGetters生成计算属性，从state/getters中读取数据（对象写法）
+
+```
+computed:{
+ ...mapState({he:'sum',xuexiao:'school',xueke:'subject'})
+ ...mapGetters({bigSum:'bigSum'})
+}
+//其效果类似于
+he(){
+	return this.$store.state.sum
+}
+...
+bigSum(){
+	return this.$store.getters.sum
+}
+```
+
+-  借助mapState/mapGetters生成计算属性，从state/getters中读取数据（数组写法）
+
+```
+...mapState(['sum','school','subject']) //这种方式使得从store的state中读取的数据和computed中设定的数据名相同
+...mapGetters(['bigSum'])
+```
+
+**mapActions和mapMutations**
+
+借助mapMutations/mapAction生成对应的方法，方法中会调用commit/dispath去联系mutations（对象写法）
+
+```
+methods:{
+	...mapMutations({increment:'JIA',decrement:'JIAN'})  //要传递的数据，可以在模板调用方法名时直接传递过去
+	...mapActions({incrementOdd:'jiaOdd',incrementWait:'jiaWait'})//要传递的数据，可以在模板调用方法名时直接传递过去
+}
+//increment表示methods中的方法名，JIA表示mutation中的方法名
+```
+
+借助mapMutations/mapAction生成对应的方法，方法中会调用commit去联系mutations/mapAction（数组写法）
+
+```
+methods:{
+	...mapMutations(['JIA','JIAN']) 
+	...maoActions(['jiaOdd','jiaWait']) 
+}
+```
+
+注意：mapActions和mapMutatiosns在使用时，若需要传递参数，**需要在模板绑定时传递好参数**，否则传递的参数将默认为是事件对象
+
+**多组件共享数据**  （看视频）
+
+**vuex模块化编码：**
+
+在store中的不同组件中需要的数据进行分类
+
+```
+const countOptions = {
+    namespaced:true, //加上这一句可以使在使用mapState等方法时，能够根据模块引入对应的信息
+    actions:{},
+    mutations:{},
+    state:{
+        sum:xx,
+        school:xx,
+        subject:xx
+    },
+    getters:{}
+}
+const personOptions = {
+    namespaced:true,
+    actions:{},
+    mutations:{},
+    state:{
+    personList:[]
+    },
+    getters:{}
+}
+//创建并暴露store
+ export default new Vuex.Store({
+ moudles:{
+     countOptions,  //此处触发了对象的简写形式
+     personOptions
+ }
+ })
+```
+
+在使用时应注意：
+
+```
+methods:{
+...mapState{'countOptions',[sum','school','subject']} //对象写法与该数组写法类似
+...mapState{'personOptions',['personList']}
+... //其余mapAction和mapMutation以及mapGetters与mapState方法类似
+}
+```
+
+//本两个小节可以看老师的笔记
+
+### 路由
+
+router 路由器    route 路由
+
+路由就是一组key-value的对应关系
+
+适用于单页面应用，实现各个路由之间的切换
+
+数据需要通过ajax来获取
+
+key为路径，value可能是function或component
+
+路由分类： 前端路由、后端路由 （前端路由表示根据路径展示对应的组件；后端路由表示根据路径，匹配响应函数返回响应）
+
+npm i vue-router@3   //router 最新版本只能应用于vue3中
+
+**引入并使用 **
+
+import vueRouter from 'vue-router'
+
+Vue.use(vueRouter)
+
+**使用方法：**
+
+在src中创建router文件夹
+
+- 在main.js中引入
+
+```
+import router from 'XXXX' //写router的那个地址
+
+export defaule new Vue({
+    el:'#app',
+    render:h=>h(APP),
+    router
+})
+```
+
+- 在src中新建router文件夹，并从中建立index.js文件
+
+```
+import vueRouter from 'vue-router'
+import About from 'xxx'
+...
+export default new vueRouter({
+    routers:[
+         {
+             path: /About,
+             component: About
+         },{
+             path: /Home,
+             component: Home
+         },
+    ]
+})
+```
+
+- vue中借助router-link标签实现路由的切换
+
+```
+<router-link class="#" active-class="active" to="/about">About</router-link>
+<router-link class="#" active-class="active" to="/home">Home</router-link>
+//active-class设置为active表示在当前路径时该选项点亮，也可简写为 class="xxx active"
+```
+
+router-link最终会被vue-router转成a标签
+
+- 指定组件的呈现位置
+
+```
+<router-view></router-view>
+```
+
+**几个注意点：**
+
+- 通过切换，隐藏了的路由组件，默认是**被销毁**的，需要的时候再去挂载
+- 每个组件都有自己的$route属性，里面存储自己的路由信息
+- 整个应用只有一个router，可以通过组件的$router属性获取到
+
+**嵌套路由：**
+
+- 配置路由
+
+```
+export default new VueRouter({
+routers:[
+    {
+      path:'/about',  //一级路由要加/ 
+      component:About,
+      children:[
+        {
+           path:'news',  //子路由不需要加/
+           component:News,
+        },
+      ]
+    },
+  ]
+})
+```
+
+注意：嵌套路由中的router-link中的跳转to中要写绝对路径
+
+```
+<router-link class = "xxx" active-class="active" to = "/home/news">Mews</router-link>
+```
+
+**路由的query参数**
+
+- 跳转路由并携带query参数，to的字符串写法
+
+```
+<router-link to="/home/message?id=666&title=你好啊">数据</router-link>  //这种方式传递的参数只能是固定的
+<router-link :to="`/home/message?id=${666}&title=${你好啊}`">数据</router-link> //前面加冒号表示后面双引号中的数据按照字符串解析，但双引号中加入模板字符串，将又会变成字符串，但其中可以穿插js表达式，只需要这种方式写就可以：${js表达式}。
+```
+
+/home/message路由中所携带的参数在其**$route.query**中
+
+- [x] 模板字符串适用于在字符串中穿插js表达式
+
+- 跳转路由并携带query参数，to的对象写法（推荐）
+
+```
+<router-link :to="{   //注意这里是引号里面再对象
+    path:'/home/message',
+    query:{
+        id:m.id,
+        title:m.title
+    }
+}">
+   {{m.title}}
+</router-link>
+```
+
+**命名路由**
+
+可以简化路由的跳转
+
+给路由命名：
+
+```
+export default new VueRouter({
+routers:[
+    {
+      name:about, //name一般写为和path最后一级路由相同的名字，也可自己进行设置
+      path:'/about',  //一级路由要加/ 
+      component:About,
+      children:[
+        {
+           name:news,
+           path:'news',  //子路由不需要加/
+           component:News,
+        },
+      ]
+    },
+  ]
+})
+```
+
+简化跳转：
+
+```
+<router-link :to="{   //注意这里是引号里面再对象
+    path:'/about/news',
+    query:{
+        id:m.id,
+        title:m.title
+    }
+}">
+   {{m.title}}
+</router-link>
+转换为
+<router-link :to="{   //注意这里是引号里面再对象
+    name:'news',
+    query:{
+        id:m.id,
+        title:m.title
+    }
+}">
+   {{m.title}}
+</router-link>
+同样适用于不带参数的简化跳转 :to={name:news}
+```
+
+**路由中的params参数** 
+
+路由命名
+
+```
+export default new VueRouter({
+routers:[
+    {
+      name:about,
+      path:'/about', 
+      component:About,
+      children:[
+        {
+           name:news,
+           path:'news/:id/:title',  //占位符声明接收params参数
+           component:News,
+        },
+      ]
+    },
+  ]
+})
+```
+
+路由跳转
+
+```
+//字符串写法
+<router-link :to="`/about/news/${m.id}/${m.title}`"> {{m.title}}</router-link> 
+//对象写法
+<router-link :to="{
+    name:'news',  //注意携带params参数时，这里只能写name，不能写path
+    params:{
+        id:m.id,
+        title:m.title
+    }
+}"> {{m.title}}</router-link>
+```
+
+组件获取参数时**使用this.$soute.params**
+
+**路由的props配置**
+
+```
+name:about,
+path:'/about', 
+component:About,
+//第一种写法：props值为对象，该对象中所有的key-value的组合最终都会通过prop传给对应的About组件，但这种方式只能传递不变的数据
+props:{a:11,b:32}
+//第二种写法：props值为布尔值，为true时，则把路由收到的所有params参数通过props传递给About组件，但这种方式无法传递不变数据及query数据
+props:true
+//第三种写法：props为函数，该函数返回的对象中每一组key-value都会通过props传递给About组件，这种写法所有的传参方式都适用
+props(route){  //route接收的是对应组件About的$route
+    return {
+      id:route.query.id,
+      title:route.query.title,
+      a:11,
+      b:32 
+    }
+}
+```
+
+在接收组件中要引入props项 props:['id','title]
+
+**router-link的replace属性**
+
+```
+<router-link to = "#" :replace="true" >{{xx}}</router-link>   //注意写法上要加双引号
+简写方式：
+<router-link to = "#" replace >{{xx}}</router-link>
+```
+
+浏览器的历史记录有两种写入方式，分别为push和replace，push是追加历史记录，replace是替换**当前**记录（注意是当前历史记录，即只会替换掉当前页面的记录，而不是替换掉之前所有的记录），路由跳转时候默认为push
+
+**编程式路由导航**
+
+router-link最终都会转换为a标签，但有时需要用button来实现路由跳转，这中方法将不再合适，需要借助编程式路由导航，这种方式还可以实现过几秒自动跳转的方式
+
+作用：不借助router-link实现路由跳转，让路由跳转更灵活
+
+```
+//$router
+methods:{
+    pushShow(m){
+        this.$router.push({
+            name:'about',
+            params:{
+                id:m.id,
+                title:m.title
+            }
+        })
+    }
+}
+push一样的用法
+类似的还有 foward（向前） back（后退） go（n）n为整数表示向前进n步，负数则为后退n步
+```
+
+**缓存路由组件**
+
+作用：让不展示的路由组件保持挂载，不被销毁
+
+```
+<keep-alive include="News">   
+	<router-view></router-view>
+</keep-alive>
+include表示只有里面的组件被保持挂载，其余组件仍然销毁，注意News指的是要挂载的组件中name的名字，因此这时需要设置该属性
+若不写include属性，则表示所有的router-view组件都需要缓存
+
+```
+
+需要缓存多个组件时写为数组形式：    :include="['News','Message']"
+
+**路由组件中两个新的生命周期钩子**
+
+```
+activated(){     //当页面展示的时候触发该生命周期
+	console.log('当前组件被激活')
+},
+deactivated(){    //当页面切走的时候触发该生命周期
+	console.log('当前组件被失活')
+}
+```
+
+**全局路由守卫**
+
+- 全局前置路由守卫（初始化时调用、每次路由切换之前调用里面的函数）
+
+```
+coonst router = new VueRouter({
+	routers:[...]
+})
+router.beforeEach((to,form,next)=>{
+if(to.path === '/home/news' || to.path === '/home/message'){
+     if(localStorage.getItem('school')==='atguigu') next()
+    }
+else{
+     next()
+    }
+}))
+export default router
+//注意：这里的to表示跳转后的路由$route,form表示的是跳转前的路由$route,next为一个函数，next()表示同意放行，不写路由守卫将会不展示当前页面的内容
+```
+
+- [x] if(to.path === '/home/news' || to.path === '/home/message') 这种书写方式太过繁琐，可以选择在路由配置中通过某个属性的true或false来确定是否放行，而对于vue来说，自己设计的属性只能放在meta对象中，即
+
+  ```
+   {
+        name:about,
+        path:'/about', 
+        component:About,
+        mate:{isAuth:true}
+      },
+  ```
+
+  于是在校验时可以重新写为：if(to.meta.isAuth)
+
+- 全局后置路由守卫（初始化时调用，每次路由切换之后调用）
+
+```
+router.beforeEach((to,form)=>{
+   document.title = to.meta.title || '硅谷系统'
+}))
+//若未成功切换，该函数将不会执行
+```
+
+**独享路由守卫**
+
+```
+ {
+      name:about,
+      path:'/about', 
+      component:About,
+      mate:{isAuth:true}
+      beforeEnter:(to,form,next)=>{
+      
+      }
+    },
+```
+
+注意：
+
+1. 独享路由守卫的名称与全局前置路由守卫不同，一个是beforeEnter，一个是beforeEach
+2. 独享路由守卫只有前置没有后置
+
+**组件内路由守卫**
+
+该方式不再是在配置文件中写路由守卫，而是在组件中写
+
+- 进入守卫（通过路由规则，进入该组件时调用）
+
+```
+beforeRouteEnter(to,from,next){  //用法用上面全局前置路由守卫相同
+}
+//记得next()放行
+```
+
+- 离开守卫（通过路由规则，离开该组件时调用）
+
+```
+afterRouteLeave(to,from,next){  
+}
+//记得next()放行
+//该方式是在从页面切走时才会调用，注意区分后置路由的调用时间
+```
+
+注意：
+
+1. beforeRouteEnter和afterRouteLeave与data、methods等同级
+2. 这两种方式只有在通过路由规则进入和离开时，才会调用这两个函数，若当前组件作为普通组件使用，则会忽略这两个函数
+
+**路由器的_history和hash模式**
+
+默认开启的是hash工作模式
+
+- hash工作模式：http://localhost:5000/students/#/dkd/adga/adgasdg 该地址中#后面的全部都是hash值，在对服务器进行访问时，不会带上#以及之后的东西
+
+- history工作模式：
+
+由于默认是hash工作模式，若需要更换为history模式，则需要在路由配置项中加入
+
+```
+export dedault new VueRouter({
+    mode:'history',
+    routes:[]
+})
+```
+
+这种方式路径中不会出现#
+
+npm run build 能将所写文件生成.html .css 和 .js，然后呈现在浏览器上，执行后会出现dist文件，打包后的文件需要在服务器上进行部署后才能展示
+
+**UI组件库**
+
+- 完整引入
+- 按需引入（出现问题之后重新翻阅该视频）
+
+按照官方网站使用即可

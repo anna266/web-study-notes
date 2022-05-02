@@ -1,0 +1,4 @@
+/* pages/news/news.wxss */
+.img0{
+  width: 100%;
+}

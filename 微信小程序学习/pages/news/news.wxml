@@ -1,0 +1,11 @@
+<!-- pages/news/news.wxml -->
+<view>
+    <image class="img0" src="/images/3e5d50b91ec2316828bfaaea0f4898b.jpg" mode="widthFix" show-menu-by-longpress />
+    <text user-select space="ensp">
+        长按图片显示发送给朋友、收藏、保存图片、搜一搜、打开名片/前往群聊/打开小程序（若图片中包含对应二维码或小程序码）的菜单。       长按图片显示发送给朋友、收藏、保存图片、搜一搜、打开名片/前往群聊/打开小程序（若图片中包含对应二维码或小程序码）的菜单。长按图片显示发送给朋友、收藏、保存图片、搜一搜、打开名片/前往群聊/打开小程序（若图片中包含对应二维码或小程序码）的菜单。
+    </text>
+    <view wx:if="{{home>10}}">{{home}}</view>
+    <view wx:elif="{{home<6}}">1-5</view>
+    <view wx:else>6,7,8,9,10</view>
+    <button type="primary">按钮</button>
+</view>
